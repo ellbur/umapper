@@ -1,108 +1,83 @@
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include "mapping.h"
+#include "keys.h"
 
-typedef uint8_t key_code;
-const key_code A = 1;
-const key_code B = 2;
-const key_code SHIFT = 3;
-
-#define MAX_KEYS 200
-#define MAX_MODIFIERS 16
-
-typedef uint8_t modifier_set;
-
-struct mapping {
-  modifier_set from_modifiers;
-  modifier_set to_modifiers;
-  key_code to_action;
-};
-
-enum key_style {
-  action_key_style,
-  modifier_key_style,
-  transparent_modifier_key_style
-};
-
-struct action_key {
-  int num_mappings;
-  struct mapping const *mappings;
-};
-
-struct modifier_key {
-  uint8_t modifier_number;
-  key_code to_modifier;
-};
-
-struct transparent_modifier_key {
-  uint8_t modifier_number;
-};
-
-struct key_definition {
-  enum key_style style;
-  union {
-    struct action_key action_key;
-    struct modifier_key modifier_key;
-    struct transparent_modifier_key transparent_modifier_key;
-  };
-};
-
-struct layout {
-  int num_keys;
-  struct key_definition const *key_definitions;
-};
-
-const struct mapping our_mappings[] = {
-  { .from_modifiers = 0x0, .to_modifiers = 0x0, .to_action = A },
-  { .from_modifiers = 0x1, .to_modifiers = 0x1, .to_action = A },
-};
-
-const struct key_definition our_key_definitions[] = {
-  { .style = action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 0 } },
-  { .style = modifier_key_style, .modifier_key = { .modifier_number = 0, .to_modifier = SHIFT } },
-};
-
-const struct layout our_layout = {
-  .num_keys = 2,
-  .key_definitions = our_key_definitions
-};
-
-struct pressed_modifier {
-  key_code input_key;
-  uint8_t modifier_number;
-};
-
-struct pressed_output_modifier {
-  key_code input_key;
-  key_code output_modifier;
-};
-
-struct pressed_action_key {
-  key_code trigger;
-  modifier_set to_modifiers;
-  key_code to_action;
-};
-
-struct state {
-  bool input_pressed_keys[MAX_KEYS];
-  
-  uint8_t pressed_modifier_mask;
-  uint8_t num_pressed_modifiers;
-  struct pressed_modifier pressed_modifiers[MAX_MODIFIERS];
-  
-  uint8_t num_pressed_output_modifiers;
-  struct pressed_output_modifier pressed_output_modifiers[MAX_MODIFIERS];
-  
-  bool has_pressed_action_key;
-  struct pressed_action_key pressed_action_key;
-};
-
-struct state our_state = { };
-
-void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping) {
+static void release_unneeded_modifiers(modifier_set base_mask, modifier_set mask, event_callback_t *cb, void *data) {
+  if (!(base_mask & LEFT_SHIFT_MASK) && (mask & LEFT_SHIFT_MASK)) cb(data, PRESSED, LEFTSHIFT);
+  if (!(base_mask & RIGHT_SHIFT_MASK) && (mask & RIGHT_SHIFT_MASK)) cb(data, PRESSED, RIGHTSHIFT);
+  if (!(base_mask & LEFT_CTRL_MASK) && (mask & LEFT_CTRL_MASK)) cb(data, PRESSED, LEFTCTRL);
+  if (!(base_mask & RIGHT_CTRL_MASK) && (mask & RIGHT_CTRL_MASK)) cb(data, PRESSED, RIGHTCTRL);
+  if (!(base_mask & LEFT_ALT_MASK) && (mask & LEFT_ALT_MASK)) cb(data, PRESSED, LEFTALT);
+  if (!(base_mask & RIGHT_ALT_MASK) && (mask & RIGHT_ALT_MASK)) cb(data, PRESSED, RIGHTALT);
+  if (!(base_mask & LEFT_META_MASK) && (mask & LEFT_META_MASK)) cb(data, PRESSED, LEFTMETA);
+  if (!(base_mask & RIGHT_META_MASK) && (mask & RIGHT_META_MASK)) cb(data, PRESSED, RIGHTMETA);
 }
 
-void newly_press(struct layout const *layout, struct state *state, key_code k) {
+static void press_new_modifiers(modifier_set old_mask, modifier_set mask, event_callback_t *cb, void *data) {
+  if (!(old_mask & LEFT_SHIFT_MASK) && (mask & LEFT_SHIFT_MASK)) cb(data, PRESSED, LEFTSHIFT);
+  if (!(old_mask & RIGHT_SHIFT_MASK) && (mask & RIGHT_SHIFT_MASK)) cb(data, PRESSED, RIGHTSHIFT);
+  if (!(old_mask & LEFT_CTRL_MASK) && (mask & LEFT_CTRL_MASK)) cb(data, PRESSED, LEFTCTRL);
+  if (!(old_mask & RIGHT_CTRL_MASK) && (mask & RIGHT_CTRL_MASK)) cb(data, PRESSED, RIGHTCTRL);
+  if (!(old_mask & LEFT_ALT_MASK) && (mask & LEFT_ALT_MASK)) cb(data, PRESSED, LEFTALT);
+  if (!(old_mask & RIGHT_ALT_MASK) && (mask & RIGHT_ALT_MASK)) cb(data, PRESSED, RIGHTALT);
+  if (!(old_mask & LEFT_META_MASK) && (mask & LEFT_META_MASK)) cb(data, PRESSED, LEFTMETA);
+  if (!(old_mask & RIGHT_META_MASK) && (mask & RIGHT_META_MASK)) cb(data, PRESSED, RIGHTMETA);
+}
+
+static void release_action_keys(struct state *state, event_callback_t *cb, void *data) {
+  if (state->has_pressed_action_key) {
+    cb(data, RELEASED, state->pressed_action_key.to_action);
+    release_unneeded_modifiers(state->output_modifier_mask, state->pressed_action_key.to_modifiers, cb, data);
+    state->has_pressed_action_key = false;
+  }
+}
+
+static void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping, event_callback_t *cb, void *data) {
+  release_action_keys(state, cb, data);
+  press_new_modifiers(state->output_modifier_mask, mapping->to_modifiers, cb, data);
+  cb(data, PRESSED, mapping->to_action);
+  
+  state->has_pressed_action_key = true;
+  state->pressed_action_key.to_action = mapping->to_action;
+  state->pressed_action_key.to_modifiers = mapping->to_modifiers;
+  state->pressed_action_key.trigger = k;
+}
+
+static void add_modifier(struct state *state, key_code k, struct modifier_key const *modifier_key, event_callback_t *cb, void *data) {
+  if (state->num_pressed_modifiers < MAX_MODIFIERS) {
+    int i = state->num_pressed_modifiers;
+    
+    state->pressed_modifiers[i].input_key = k;
+    state->pressed_modifiers[i].modifier_mask = modifier_key->modifier_mask;
+    state->pressed_modifier_mask |= modifier_key->modifier_mask;
+      
+    state->num_pressed_modifiers += 1;
+  }
+  
+  if (state->num_pressed_output_modifiers < MAX_MODIFIERS) {
+    int i = state->num_pressed_output_modifiers;
+    
+    state->pressed_output_modifiers[i].input_key = k;
+    state->pressed_output_modifiers[i].output_modifier_mask = modifier_key->output_modifier_mask;
+    press_new_modifiers(state->output_modifier_mask, modifier_key->output_modifier_mask, cb, data);
+    
+    state->num_pressed_output_modifiers += 1;
+  }
+}
+
+static void add_transparent_modifier(struct state *state, key_code k, struct transparent_modifier_key const *transparent_modifier_key, event_callback_t *cb, void *data) {
+  if (state->num_pressed_modifiers < MAX_MODIFIERS) {
+    int i = state->num_pressed_modifiers;
+    
+    state->pressed_modifiers[i].input_key = k;
+    state->pressed_modifiers[i].modifier_mask = transparent_modifier_key->modifier_mask;
+    state->pressed_modifier_mask |= transparent_modifier_key->modifier_mask;
+      
+    state->num_pressed_modifiers += 1;
+  }
+}
+
+static void newly_press(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (k >= layout->num_keys) {
     return;
   }
@@ -111,33 +86,92 @@ void newly_press(struct layout const *layout, struct state *state, key_code k) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;
     for (uint8_t i=0; i<action_key->num_mappings; i++) {
       if (!(~action_key->mappings[i].from_modifiers & state->pressed_modifier_mask)) {
-        add_action_mapping(state, k, &action_key->mappings[i]);
+        add_action_mapping(state, k, &action_key->mappings[i], cb, data);
         break;
       }
     }
   }
   else if (layout->key_definitions[k].style == modifier_key_style) {
-    
+    add_modifier(state, k, &layout->key_definitions[k].modifier_key, cb, data);
   }
   else if (layout->key_definitions[k].style == transparent_modifier_key_style) {
-    
+    add_transparent_modifier(state, k, &layout->key_definitions[k].transparent_modifier_key, cb, data);
   }
 }
 
-void do_press(struct layout const *layout, struct state *state, key_code k) {
+static void do_press(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (!state->input_pressed_keys[k]) {
     state->input_pressed_keys[k] = true;
-    newly_press(layout, state, k);
+    newly_press(layout, state, k, cb, data);
   }
 }
 
-void newly_release(struct layout const *layout, struct state *state, key_code k) {
+static void remove_action_mapping(struct state *state, key_code k, struct action_key const *action_key, event_callback_t *cb, void *data) {
+  if (state->has_pressed_action_key) {
+    if (state->pressed_action_key.trigger == k) {
+      release_action_keys(state, cb, data);
+    }
+  }
 }
 
-void do_release(struct layout const *layout, struct state *state, key_code k) {
+static void remove_modifier(struct state *state, key_code k, struct modifier_key const *modifier_key, event_callback_t *cb, void *data) {
+  for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
+    if (state->pressed_modifiers[i].input_key == k) {
+      // ...
+      
+      break;
+    }
+  }
+  
+  for (uint8_t i=0; i<state->num_pressed_output_modifiers; i++) {
+    if (state->pressed_output_modifiers[i].input_key == k) {
+      // ...
+      
+      break;
+    }
+  }
+}
+
+static void remove_transparent_modifier(struct state *state, key_code k, struct transparent_modifier_key const *transparent_modifier_key, event_callback_t *cb, void *data) {
+  for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
+    if (state->pressed_modifiers[i].input_key == k) {
+      // ...
+      
+      break;
+    }
+  }
+}
+
+static void newly_release(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
+  if (k >= layout->num_keys) {
+    return;
+  }
+  
+  if (layout->key_definitions[k].style == action_key_style) {
+    struct action_key const *action_key = &layout->key_definitions[k].action_key;
+    remove_action_mapping(state, k, action_key, cb, data);
+  }
+  else if (layout->key_definitions[k].style == modifier_key_style) {
+    remove_modifier(state, k, &layout->key_definitions[k].modifier_key, cb, data);
+  }
+  else if (layout->key_definitions[k].style == transparent_modifier_key_style) {
+    remove_transparent_modifier(state, k, &layout->key_definitions[k].transparent_modifier_key, cb, data);
+  }
+}
+
+static void do_release(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (state->input_pressed_keys[k]) {
     state->input_pressed_keys[k] = false;
-    newly_release(layout, state, k);
+    newly_release(layout, state, k, cb, data);
+  }
+}
+
+void step(struct layout const *layout, struct state *state, enum event_type t, key_code k, event_callback_t *cb, void *data) {
+  if (t == PRESSED) {
+    do_press(layout, state, k, cb, data);
+  }
+  else {
+    do_release(layout, state, k, cb, data);
   }
 }
 
