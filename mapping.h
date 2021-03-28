@@ -34,11 +34,6 @@ struct state {
   struct pressed_action_key pressed_action_key;
 };
 
-enum event_type {
-  PRESSED,
-  RELEASED
-};
-
 typedef void event_callback_t(void *data, enum event_type, key_code);
 
 void step(struct layout const *layout, struct state *state, enum event_type t, key_code k, event_callback_t *cb, void *data);
