@@ -6,19 +6,19 @@
 
 static const struct mapping our_mappings[] = {
   // A
-  { .from_modifiers = 0x0, .to_modifiers = 0x0, .to_action = B },
-  { .from_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = B },
+  { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = B },
+  { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = B },
   
   // B
-  { .from_modifiers = 0x0, .to_modifiers = 0x0, .to_action = C },
-  { .from_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = C },
+  { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = C },
+  { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = C },
   
   // C
-  { .from_modifiers = 0x0, .to_modifiers = 0x0, .to_action = A },
-  { .from_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = A },
+  { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = A },
+  { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = A },
   
   // D
-  { .from_modifiers = 0x0, .to_modifiers = LEFT_CTRL_MASK, .to_action = A },
+  { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_CTRL_MASK, .to_action = A },
 };
 
 static const struct key_definition our_key_definitions[] = {
@@ -30,7 +30,7 @@ static const struct key_definition our_key_definitions[] = {
 };
 
 static const struct layout our_layout = {
-  .num_keys = 4,
+  .num_keys = 5,
   .key_definitions = our_key_definitions
 };
 
@@ -72,5 +72,11 @@ int main() {
   test(&state, PRESSED, D);
   test(&state, PRESSED, C);
   test(&state, RELEASED, C);
+  test(&state, PRESSED, LEFTSHIFT);
+  test(&state, PRESSED, C);
+  test(&state, PRESSED, B);
+  test(&state, RELEASED, C);
+  test(&state, RELEASED, B);
+  test(&state, RELEASED, LEFTSHIFT);
 }
 

@@ -2,44 +2,56 @@
 #include "mapping.h"
 #include "keys.h"
 
-static void release_unneeded_modifiers(modifier_set base_mask, modifier_set mask, event_callback_t *cb, void *data) {
-  if (!(base_mask & LEFT_SHIFT_MASK) && (mask & LEFT_SHIFT_MASK)) cb(data, RELEASED, LEFTSHIFT);
-  if (!(base_mask & RIGHT_SHIFT_MASK) && (mask & RIGHT_SHIFT_MASK)) cb(data, RELEASED, RIGHTSHIFT);
-  if (!(base_mask & LEFT_CTRL_MASK) && (mask & LEFT_CTRL_MASK)) cb(data, RELEASED, LEFTCTRL);
-  if (!(base_mask & RIGHT_CTRL_MASK) && (mask & RIGHT_CTRL_MASK)) cb(data, RELEASED, RIGHTCTRL);
-  if (!(base_mask & LEFT_ALT_MASK) && (mask & LEFT_ALT_MASK)) cb(data, RELEASED, LEFTALT);
-  if (!(base_mask & RIGHT_ALT_MASK) && (mask & RIGHT_ALT_MASK)) cb(data, RELEASED, RIGHTALT);
-  if (!(base_mask & LEFT_META_MASK) && (mask & LEFT_META_MASK)) cb(data, RELEASED, LEFTMETA);
-  if (!(base_mask & RIGHT_META_MASK) && (mask & RIGHT_META_MASK)) cb(data, RELEASED, RIGHTMETA);
+static void release_modifiers(modifier_set mask, event_callback_t *cb, void *data) {
+  if (mask & LEFT_SHIFT_MASK) cb(data, RELEASED, LEFTSHIFT);
+  if (mask & RIGHT_SHIFT_MASK) cb(data, RELEASED, RIGHTSHIFT);
+  if (mask & LEFT_CTRL_MASK) cb(data, RELEASED, LEFTCTRL);
+  if (mask & RIGHT_CTRL_MASK) cb(data, RELEASED, RIGHTCTRL);
+  if (mask & LEFT_ALT_MASK) cb(data, RELEASED, LEFTALT);
+  if (mask & RIGHT_ALT_MASK) cb(data, RELEASED, RIGHTALT);
+  if (mask & LEFT_META_MASK) cb(data, RELEASED, LEFTMETA);
+  if (mask & RIGHT_META_MASK) cb(data, RELEASED, RIGHTMETA);
 }
 
-static void press_new_modifiers(modifier_set old_mask, modifier_set mask, event_callback_t *cb, void *data) {
-  if (!(old_mask & LEFT_SHIFT_MASK) && (mask & LEFT_SHIFT_MASK)) cb(data, PRESSED, LEFTSHIFT);
-  if (!(old_mask & RIGHT_SHIFT_MASK) && (mask & RIGHT_SHIFT_MASK)) cb(data, PRESSED, RIGHTSHIFT);
-  if (!(old_mask & LEFT_CTRL_MASK) && (mask & LEFT_CTRL_MASK)) cb(data, PRESSED, LEFTCTRL);
-  if (!(old_mask & RIGHT_CTRL_MASK) && (mask & RIGHT_CTRL_MASK)) cb(data, PRESSED, RIGHTCTRL);
-  if (!(old_mask & LEFT_ALT_MASK) && (mask & LEFT_ALT_MASK)) cb(data, PRESSED, LEFTALT);
-  if (!(old_mask & RIGHT_ALT_MASK) && (mask & RIGHT_ALT_MASK)) cb(data, PRESSED, RIGHTALT);
-  if (!(old_mask & LEFT_META_MASK) && (mask & LEFT_META_MASK)) cb(data, PRESSED, LEFTMETA);
-  if (!(old_mask & RIGHT_META_MASK) && (mask & RIGHT_META_MASK)) cb(data, PRESSED, RIGHTMETA);
+static void press_modifiers(modifier_set mask, event_callback_t *cb, void *data) {
+  if (mask & LEFT_SHIFT_MASK) cb(data, PRESSED, LEFTSHIFT);
+  if (mask & RIGHT_SHIFT_MASK) cb(data, PRESSED, RIGHTSHIFT);
+  if (mask & LEFT_CTRL_MASK) cb(data, PRESSED, LEFTCTRL);
+  if (mask & RIGHT_CTRL_MASK) cb(data, PRESSED, RIGHTCTRL);
+  if (mask & LEFT_ALT_MASK) cb(data, PRESSED, LEFTALT);
+  if (mask & RIGHT_ALT_MASK) cb(data, PRESSED, RIGHTALT);
+  if (mask & LEFT_META_MASK) cb(data, PRESSED, LEFTMETA);
+  if (mask & RIGHT_META_MASK) cb(data, PRESSED, RIGHTMETA);
 }
 
 static void release_action_keys(struct state *state, event_callback_t *cb, void *data) {
   if (state->has_pressed_action_key) {
     cb(data, RELEASED, state->pressed_action_key.to_action);
-    release_unneeded_modifiers(state->output_modifier_mask, state->pressed_action_key.to_modifiers, cb, data);
+    release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
+    state->pressed_modifier_mask &= ~state->pressed_action_key.from_absorbing_modifiers;
     state->has_pressed_action_key = false;
   }
 }
 
 static void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping, event_callback_t *cb, void *data) {
-  press_new_modifiers(state->output_modifier_mask, mapping->to_modifiers, cb, data);
+  if (!(mapping->to_modifiers & LEFT_SHIFT_MASK) && (state->output_modifier_mask & LEFT_SHIFT_MASK)) {
+    state->output_modifier_mask &= ~LEFT_SHIFT_MASK;
+    cb(data, RELEASED, LEFTSHIFT);
+  }
+  
+  if (!(mapping->to_modifiers & RIGHT_SHIFT_MASK) && (state->output_modifier_mask & RIGHT_SHIFT_MASK)) {
+    state->output_modifier_mask &= ~RIGHT_SHIFT_MASK;
+    cb(data, RELEASED, RIGHTSHIFT);
+  }
+  
+  press_modifiers(mapping->to_modifiers & ~state->output_modifier_mask, cb, data);
   cb(data, PRESSED, mapping->to_action);
   
   state->has_pressed_action_key = true;
   state->pressed_action_key.to_action = mapping->to_action;
   state->pressed_action_key.to_modifiers = mapping->to_modifiers;
   state->pressed_action_key.trigger = k;
+  state->pressed_action_key.from_absorbing_modifiers = mapping->from_absorbing_modifiers;
 }
 
 static void add_modifier(struct state *state, key_code k, struct modifier_key const *modifier_key, event_callback_t *cb, void *data) {
@@ -58,7 +70,7 @@ static void add_modifier(struct state *state, key_code k, struct modifier_key co
     
     state->pressed_output_modifiers[i].input_key = k;
     state->pressed_output_modifiers[i].output_modifier_mask = modifier_key->output_modifier_mask;
-    press_new_modifiers(state->output_modifier_mask, modifier_key->output_modifier_mask, cb, data);
+    press_modifiers(modifier_key->output_modifier_mask & ~state->output_modifier_mask, cb, data);
     state->output_modifier_mask |= modifier_key->output_modifier_mask;
     
     state->num_pressed_output_modifiers += 1;
@@ -146,6 +158,7 @@ static void remove_modifier(struct state *state, key_code k, struct modifier_key
       
       state->num_pressed_output_modifiers -= 1;
       
+      modifier_set old_mask = state->output_modifier_mask;
       modifier_set new_mask = 0;
       for (uint8_t j=0; j<state->num_pressed_output_modifiers; j++) {
         new_mask |= state->pressed_output_modifiers[j].output_modifier_mask;
@@ -158,7 +171,7 @@ static void remove_modifier(struct state *state, key_code k, struct modifier_key
         base_mask |= state->pressed_action_key.to_modifiers;
       }
       
-      release_unneeded_modifiers(base_mask, modifier_key->output_modifier_mask, cb, data);
+      release_modifiers(old_mask & ~new_mask, cb, data);
       
       break;
     }

@@ -17,6 +17,7 @@ struct pressed_action_key {
   key_code trigger;
   modifier_set to_modifiers;
   key_code to_action;
+  modifier_set from_absorbing_modifiers;
 };
 
 struct state {

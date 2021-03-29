@@ -44,6 +44,7 @@ typedef uint8_t modifier_set;
 
 struct mapping {
   modifier_set from_modifiers;
+  modifier_set from_absorbing_modifiers;
   modifier_set to_modifiers;
   key_code to_action;
 };
