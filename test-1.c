@@ -1,6 +1,7 @@
 
 #include "keys.h"
 #include "mapping.h"
+#include "debugging.h"
 #include <stdio.h>
 
 static const struct mapping our_mappings[] = {
@@ -15,12 +16,16 @@ static const struct mapping our_mappings[] = {
   // C
   { .from_modifiers = 0x0, .to_modifiers = 0x0, .to_action = A },
   { .from_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = A },
+  
+  // D
+  { .from_modifiers = 0x0, .to_modifiers = LEFT_CTRL_MASK, .to_action = A },
 };
 
 static const struct key_definition our_key_definitions[] = {
   /* A */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 0 } },
   /* B */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 2 } },
   /* C */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 4 } },
+  /* D */ { action_key_style, .action_key = { .num_mappings = 1, .mappings = our_mappings + 6 } },
   /* LEFTSHIFT */ { modifier_key_style, .modifier_key = { MOD1_MASK, LEFT_SHIFT_MASK } },
 };
 
@@ -63,5 +68,9 @@ int main() {
   test(&state, PRESSED, B);
   test(&state, RELEASED, LEFTSHIFT);
   test(&state, RELEASED, B);
+  test(&state, RELEASED, A);
+  test(&state, PRESSED, D);
+  test(&state, PRESSED, C);
+  test(&state, RELEASED, C);
 }
 

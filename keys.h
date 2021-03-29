@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#define MAX_KEYS 11
+#define MAX_KEYS 12
 #define MAX_MODIFIERS 8
 
 typedef uint8_t key_code;
@@ -12,16 +12,15 @@ typedef uint8_t key_code;
 #define A 0
 #define B 1
 #define C 2
-#define LEFTSHIFT 3
-#define RIGHTSHIFT 4
-#define LEFTCTRL 5
-#define RIGHTCTRL 6
-#define LEFTALT 7
-#define RIGHTALT 8
-#define LEFTMETA 9
-#define RIGHTMETA 10
-
-extern char const * const key_names[MAX_KEYS];
+#define D 3
+#define LEFTSHIFT 4
+#define RIGHTSHIFT 5
+#define LEFTCTRL 6
+#define RIGHTCTRL 7
+#define LEFTALT 8
+#define RIGHTALT 9
+#define LEFTMETA 10
+#define RIGHTMETA 11
 
 typedef uint8_t modifier_set;
 
@@ -87,8 +86,6 @@ enum event_type {
   PRESSED = 0,
   RELEASED = 1
 };
-
-extern char const * const event_type_names[2];
 
 struct event {
   enum event_type t;

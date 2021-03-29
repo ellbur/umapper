@@ -33,7 +33,6 @@ static void release_action_keys(struct state *state, event_callback_t *cb, void 
 }
 
 static void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping, event_callback_t *cb, void *data) {
-  release_action_keys(state, cb, data);
   press_new_modifiers(state->output_modifier_mask, mapping->to_modifiers, cb, data);
   cb(data, PRESSED, mapping->to_action);
   
@@ -82,6 +81,8 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
   if (k >= layout->num_keys) {
     return;
   }
+  
+  release_action_keys(state, cb, data);
   
   if (layout->key_definitions[k].style == action_key_style) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;

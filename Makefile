@@ -9,13 +9,17 @@ CFLAGS = -std=c11 -Wall -Werror
 	mkdir -p .objs
 	gcc -c $(CFLAGS) keys.c -o .objs/keys.o
 	
-.objs/test-1.o: test-1.c mapping.h keys.h
+.objs/debugging.o: debugging.c debugging.h keys.h
+	mkdir -p .objs
+	gcc -c $(CFLAGS) debugging.c -o .objs/debugging.o
+	
+.objs/test-1.o: test-1.c mapping.h keys.h debugging.h
 	mkdir -p .objs
 	gcc -c $(CFLAGS) test-1.c -o .objs/test-1.o
 
-bin/test-1: .objs/test-1.o .objs/keys.o .objs/mapping.o
+bin/test-1: .objs/test-1.o .objs/keys.o .objs/mapping.o .objs/debugging.o
 	mkdir -p bin
-	gcc .objs/test-1.o .objs/keys.o .objs/mapping.o -o bin/test-1
+	gcc .objs/test-1.o .objs/keys.o .objs/mapping.o .objs/debugging.o -o bin/test-1
 
 test-1: bin/test-1
 	./bin/test-1
