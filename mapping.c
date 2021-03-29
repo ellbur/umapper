@@ -28,7 +28,6 @@ static void release_action_keys(struct state *state, event_callback_t *cb, void 
   if (state->has_pressed_action_key) {
     cb(data, RELEASED, state->pressed_action_key.to_action);
     release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
-    state->pressed_modifier_mask &= ~state->pressed_action_key.from_absorbing_modifiers;
     state->has_pressed_action_key = false;
   }
 }
@@ -51,7 +50,12 @@ static void add_action_mapping(struct state *state, key_code k, struct mapping c
   state->pressed_action_key.to_action = mapping->to_action;
   state->pressed_action_key.to_modifiers = mapping->to_modifiers;
   state->pressed_action_key.trigger = k;
-  state->pressed_action_key.from_absorbing_modifiers = mapping->from_absorbing_modifiers;
+  
+  if (mapping->from_absorbing_modifiers != 0) {
+    state->has_absorbed_set = true;
+    state->absorbed_set = mapping->from_absorbing_modifiers;
+    state->absorbed_trigger = k;
+  }
 }
 
 static void add_modifier(struct state *state, key_code k, struct modifier_key const *modifier_key, event_callback_t *cb, void *data) {
@@ -95,6 +99,11 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
   }
   
   release_action_keys(state, cb, data);
+  
+  if (state->has_absorbed_set && state->absorbed_trigger != k) {
+    state->pressed_modifier_mask &= ~state->absorbed_set;
+    state->has_absorbed_set = false;
+  }
   
   if (layout->key_definitions[k].style == action_key_style) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;

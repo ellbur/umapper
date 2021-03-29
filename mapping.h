@@ -17,7 +17,6 @@ struct pressed_action_key {
   key_code trigger;
   modifier_set to_modifiers;
   key_code to_action;
-  modifier_set from_absorbing_modifiers;
 };
 
 struct state {
@@ -33,6 +32,10 @@ struct state {
   
   bool has_pressed_action_key;
   struct pressed_action_key pressed_action_key;
+  
+  bool has_absorbed_set;
+  modifier_set absorbed_set;
+  key_code absorbed_trigger;
 };
 
 typedef void event_callback_t(void *data, enum event_type, key_code);

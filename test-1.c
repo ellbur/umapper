@@ -78,5 +78,10 @@ int main() {
   test(&state, RELEASED, C);
   test(&state, RELEASED, B);
   test(&state, RELEASED, LEFTSHIFT);
+  test(&state, PRESSED, LEFTSHIFT);
+  test(&state, PRESSED, C);
+  test(&state, RELEASED, C);
+  test(&state, PRESSED, C);
+  test(&state, RELEASED, C);
 }
 
