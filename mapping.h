@@ -1,7 +1,12 @@
 
 #pragma once
 
-#include "keys.h"
+#include "layouts.h"
+#include "event.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct pressed_modifier {
   key_code input_key;
@@ -41,4 +46,8 @@ struct state {
 typedef void event_callback_t(void *data, enum event_type, key_code);
 
 void step(struct layout const *layout, struct state *state, enum event_type t, key_code k, event_callback_t *cb, void *data);
+
+#ifdef __cplusplus
+}
+#endif
 
