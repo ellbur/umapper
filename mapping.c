@@ -81,18 +81,6 @@ static void add_modifier(struct state *state, key_code k, struct modifier_key co
   }
 }
 
-static void add_transparent_modifier(struct state *state, key_code k, struct transparent_modifier_key const *transparent_modifier_key, event_callback_t *cb, void *data) {
-  if (state->num_pressed_modifiers < MAX_MODIFIERS) {
-    int i = state->num_pressed_modifiers;
-    
-    state->pressed_modifiers[i].input_key = k;
-    state->pressed_modifiers[i].modifier_mask = transparent_modifier_key->modifier_mask;
-    state->pressed_modifier_mask |= transparent_modifier_key->modifier_mask;
-      
-    state->num_pressed_modifiers += 1;
-  }
-}
-
 static void newly_press(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (k >= layout->num_keys) {
     return;
@@ -116,9 +104,6 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
   }
   else if (layout->key_definitions[k].style == modifier_key_style) {
     add_modifier(state, k, &layout->key_definitions[k].modifier_key, cb, data);
-  }
-  else if (layout->key_definitions[k].style == transparent_modifier_key_style) {
-    add_transparent_modifier(state, k, &layout->key_definitions[k].transparent_modifier_key, cb, data);
   }
 }
 
@@ -187,28 +172,6 @@ static void remove_modifier(struct state *state, key_code k, struct modifier_key
   }
 }
 
-static void remove_transparent_modifier(struct state *state, key_code k, struct transparent_modifier_key const *transparent_modifier_key, event_callback_t *cb, void *data) {
-  for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
-    if (state->pressed_modifiers[i].input_key == k) {
-      for (uint8_t j=i+1; j<state->num_pressed_modifiers; j++) {
-        state->pressed_modifiers[j-1].input_key = state->pressed_modifiers[j].input_key;
-        state->pressed_modifiers[j-1].modifier_mask = state->pressed_modifiers[j].modifier_mask;
-      }
-      
-      state->num_pressed_modifiers -= 1;
-      
-      modifier_set new_mask = 0;
-      for (uint8_t j=0; j<state->num_pressed_modifiers; j++) {
-        new_mask |= state->pressed_modifiers[j].modifier_mask;
-      }
-      
-      state->pressed_modifier_mask = new_mask;
-      
-      break;
-    }
-  }
-}
-
 static void newly_release(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (k >= layout->num_keys) {
     return;
@@ -220,9 +183,6 @@ static void newly_release(struct layout const *layout, struct state *state, key_
   }
   else if (layout->key_definitions[k].style == modifier_key_style) {
     remove_modifier(state, k, &layout->key_definitions[k].modifier_key, cb, data);
-  }
-  else if (layout->key_definitions[k].style == transparent_modifier_key_style) {
-    remove_transparent_modifier(state, k, &layout->key_definitions[k].transparent_modifier_key, cb, data);
   }
 }
 

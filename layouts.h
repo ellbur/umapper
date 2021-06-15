@@ -41,7 +41,6 @@ struct mapping {
 enum key_style {
   action_key_style,
   modifier_key_style,
-  transparent_modifier_key_style
 };
 
 struct action_key {
@@ -54,16 +53,11 @@ struct modifier_key {
   modifier_set output_modifier_mask;
 };
 
-struct transparent_modifier_key {
-  modifier_set modifier_mask;
-};
-
 struct key_definition {
   enum key_style style;
   union {
     struct action_key action_key;
     struct modifier_key modifier_key;
-    struct transparent_modifier_key transparent_modifier_key;
   };
 };
 
