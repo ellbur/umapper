@@ -1,0 +1,13 @@
+#!/usr/bin/env rakudo
+
+sub MAIN($test-path) {
+  my $here = $*PROGRAM.parent;
+  my $test-file = $test-path.IO;
+  my $base = S/\.<-[\.]>*$// with $test-file.basename;
+  my $bin = $here.add('bin').add($base);
+  my @common-sources = dir $here, test => /.*\.c$/;
+  my @all-sources = [|@common-sources, $test-file];
+  run 'gcc', '-I', $here, '-std=c99', '-o', $bin, @all-sources;
+  run $bin;
+}
+
