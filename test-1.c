@@ -4,29 +4,31 @@
 #include "debugging.h"
 #include <stdio.h>
 
-static const struct mapping our_mappings[] = {
-  // A
+static const struct mapping our_mappings_A[] = {
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = B },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = B },
+};
   
-  // B
+static const struct mapping our_mappings_B[] = {
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = C },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = C },
+};
   
-  // C
+static const struct mapping our_mappings_C[] = {
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = A },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = A },
+};
   
-  // D
+static const struct mapping our_mappings_D[] = {
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_CTRL_MASK, .to_action = A },
 };
 
 static const struct key_definition our_key_definitions[] = {
-  /* A */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 0 } },
-  /* B */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 2 } },
-  /* C */ { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings + 4 } },
-  /* D */ { action_key_style, .action_key = { .num_mappings = 1, .mappings = our_mappings + 6 } },
-  /* LEFTSHIFT */ { modifier_key_style, .modifier_key = { MOD1_MASK, LEFT_SHIFT_MASK } },
+  [A] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_A } },
+  [B] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_B } },
+  [C] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_C } },
+  [D] = { action_key_style, .action_key = { .num_mappings = 1, .mappings = our_mappings_D } },
+  [LEFTSHIFT] = { modifier_key_style, .modifier_key = { MOD1_MASK, LEFT_SHIFT_MASK } },
 };
 
 static const struct layout our_layout = {
