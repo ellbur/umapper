@@ -39,8 +39,9 @@ struct mapping {
 };
 
 enum key_style {
-  action_key_style,
-  modifier_key_style,
+  pass_through_key_style = 0,
+  action_key_style = 1,
+  modifier_key_style = 2,
 };
 
 struct action_key {

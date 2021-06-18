@@ -83,6 +83,7 @@ static void add_modifier(struct state *state, key_code k, struct modifier_key co
 
 static void newly_press(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (k >= layout->num_keys) {
+    cb(data, PRESSED, k);
     return;
   }
   
@@ -93,7 +94,10 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
     state->has_absorbed_set = false;
   }
   
-  if (layout->key_definitions[k].style == action_key_style) {
+  if (layout->key_definitions[k].style == pass_through_key_style) {
+    cb(data, PRESSED, k);
+  }
+  else if (layout->key_definitions[k].style == action_key_style) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;
     for (uint8_t i=0; i<action_key->num_mappings; i++) {
       if (!(~action_key->mappings[i].from_modifiers & state->pressed_modifier_mask)) {
@@ -174,10 +178,14 @@ static void remove_modifier(struct state *state, key_code k, struct modifier_key
 
 static void newly_release(struct layout const *layout, struct state *state, key_code k, event_callback_t *cb, void *data) {
   if (k >= layout->num_keys) {
+    cb(data, RELEASED, k);
     return;
   }
   
-  if (layout->key_definitions[k].style == action_key_style) {
+  if (layout->key_definitions[k].style == pass_through_key_style) {
+    cb(data, RELEASED, k);
+  }
+  else if (layout->key_definitions[k].style == action_key_style) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;
     remove_action_mapping(state, k, action_key, cb, data);
   }
