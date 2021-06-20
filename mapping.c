@@ -3,25 +3,25 @@
 #include "keys.h"
 
 static void release_modifiers(modifier_set mask, event_callback_t *cb, void *data) {
-  if (mask & LEFT_SHIFT_MASK) cb(data, RELEASED, LEFTSHIFT);
-  if (mask & RIGHT_SHIFT_MASK) cb(data, RELEASED, RIGHTSHIFT);
-  if (mask & LEFT_CTRL_MASK) cb(data, RELEASED, LEFTCTRL);
-  if (mask & RIGHT_CTRL_MASK) cb(data, RELEASED, RIGHTCTRL);
-  if (mask & LEFT_ALT_MASK) cb(data, RELEASED, LEFTALT);
-  if (mask & RIGHT_ALT_MASK) cb(data, RELEASED, RIGHTALT);
-  if (mask & LEFT_META_MASK) cb(data, RELEASED, LEFTMETA);
-  if (mask & RIGHT_META_MASK) cb(data, RELEASED, RIGHTMETA);
+  if (mask & LEFT_SHIFT_MASK) cb(data, RELEASED, KC_LSHIFT);
+  if (mask & RIGHT_SHIFT_MASK) cb(data, RELEASED, KC_RSHIFT);
+  if (mask & LEFT_CTRL_MASK) cb(data, RELEASED, KC_LCTRL);
+  if (mask & RIGHT_CTRL_MASK) cb(data, RELEASED, KC_RCTRL);
+  if (mask & LEFT_ALT_MASK) cb(data, RELEASED, KC_LALT);
+  if (mask & RIGHT_ALT_MASK) cb(data, RELEASED, KC_RALT);
+  if (mask & LEFT_META_MASK) cb(data, RELEASED, KC_LGUI);
+  if (mask & RIGHT_META_MASK) cb(data, RELEASED, KC_RGUI);
 }
 
 static void press_modifiers(modifier_set mask, event_callback_t *cb, void *data) {
-  if (mask & LEFT_SHIFT_MASK) cb(data, PRESSED, LEFTSHIFT);
-  if (mask & RIGHT_SHIFT_MASK) cb(data, PRESSED, RIGHTSHIFT);
-  if (mask & LEFT_CTRL_MASK) cb(data, PRESSED, LEFTCTRL);
-  if (mask & RIGHT_CTRL_MASK) cb(data, PRESSED, RIGHTCTRL);
-  if (mask & LEFT_ALT_MASK) cb(data, PRESSED, LEFTALT);
-  if (mask & RIGHT_ALT_MASK) cb(data, PRESSED, RIGHTALT);
-  if (mask & LEFT_META_MASK) cb(data, PRESSED, LEFTMETA);
-  if (mask & RIGHT_META_MASK) cb(data, PRESSED, RIGHTMETA);
+  if (mask & LEFT_SHIFT_MASK) cb(data, PRESSED, KC_LSHIFT);
+  if (mask & RIGHT_SHIFT_MASK) cb(data, PRESSED, KC_RSHIFT);
+  if (mask & LEFT_CTRL_MASK) cb(data, PRESSED, KC_LCTRL);
+  if (mask & RIGHT_CTRL_MASK) cb(data, PRESSED, KC_RCTRL);
+  if (mask & LEFT_ALT_MASK) cb(data, PRESSED, KC_LALT);
+  if (mask & RIGHT_ALT_MASK) cb(data, PRESSED, KC_RALT);
+  if (mask & LEFT_META_MASK) cb(data, PRESSED, KC_LGUI);
+  if (mask & RIGHT_META_MASK) cb(data, PRESSED, KC_RGUI);
 }
 
 static void release_action_keys(struct state *state, event_callback_t *cb, void *data) {
@@ -35,12 +35,12 @@ static void release_action_keys(struct state *state, event_callback_t *cb, void 
 static void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping, event_callback_t *cb, void *data) {
   if (!(mapping->to_modifiers & LEFT_SHIFT_MASK) && (state->output_modifier_mask & LEFT_SHIFT_MASK)) {
     state->output_modifier_mask &= ~LEFT_SHIFT_MASK;
-    cb(data, RELEASED, LEFTSHIFT);
+    cb(data, RELEASED, KC_LSHIFT);
   }
   
   if (!(mapping->to_modifiers & RIGHT_SHIFT_MASK) && (state->output_modifier_mask & RIGHT_SHIFT_MASK)) {
     state->output_modifier_mask &= ~RIGHT_SHIFT_MASK;
-    cb(data, RELEASED, RIGHTSHIFT);
+    cb(data, RELEASED, KC_RSHIFT);
   }
   
   press_modifiers(mapping->to_modifiers & ~state->output_modifier_mask, cb, data);
