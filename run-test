@@ -7,7 +7,7 @@ sub MAIN($test-path) {
   my $bin = $here.add('bin').add($base);
   my @common-sources = dir $here, test => /.*\.c$/;
   my @all-sources = [|@common-sources, $test-file];
-  run 'gcc', '-I', $here, '-std=c99', '-o', $bin, @all-sources;
+  run 'gcc', '-std=c99', '-o', $bin, @all-sources;
   run $bin;
 }
 
