@@ -100,7 +100,7 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
   else if (layout->key_definitions[k].style == action_key_style) {
     struct action_key const *action_key = &layout->key_definitions[k].action_key;
     for (uint8_t i=0; i<action_key->num_mappings; i++) {
-      if (!(~action_key->mappings[i].from_modifiers & state->pressed_modifier_mask)) {
+      if (!(action_key->mappings[i].from_modifiers & ~state->pressed_modifier_mask)) {
         add_action_mapping(state, k, &action_key->mappings[i], cb, data);
         break;
       }
