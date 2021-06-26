@@ -26,6 +26,11 @@ static void test(struct state *state, enum event_type t, key_code k) {
   printf("\n");
   printf("%s %s\n", event_type_names[t], key_names[k]);
   struct event_list list = { };
+  struct layout our_layout = {
+    .mappings = our_mappings,
+    .key_definitions = our_key_definitions,
+    .num_keys = our_num_keys,
+  };
   step(&our_layout, state, t, k, push_cb, &list);
   for (uint8_t i=0; i<list.size; i++) {
     printf(" < %s %s\n", event_type_names[list.events[i].t], key_names[list.events[i].k]);

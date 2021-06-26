@@ -32,7 +32,7 @@ static void release_action_keys(struct state *state, event_callback_t *cb, void 
   }
 }
 
-static void add_action_mapping(struct state *state, key_code k, struct mapping const *mapping, event_callback_t *cb, void *data) {
+static void add_action_mapping(struct state *state, key_code k, struct mapping const __flash *mapping, event_callback_t *cb, void *data) {
   if (!(mapping->to_modifiers & LEFT_SHIFT_MASK) && (state->output_modifier_mask & LEFT_SHIFT_MASK)) {
     state->output_modifier_mask &= ~LEFT_SHIFT_MASK;
     cb(data, RELEASED, KC_LSHIFT);
@@ -58,7 +58,7 @@ static void add_action_mapping(struct state *state, key_code k, struct mapping c
   }
 }
 
-static void add_modifier(struct state *state, key_code k, struct modifier_key const *modifier_key, event_callback_t *cb, void *data) {
+static void add_modifier(struct state *state, key_code k, struct modifier_key const __flash *modifier_key, event_callback_t *cb, void *data) {
   if (state->num_pressed_modifiers < MAX_MODIFIERS) {
     int i = state->num_pressed_modifiers;
     
@@ -98,10 +98,11 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
     cb(data, PRESSED, k);
   }
   else if (layout->key_definitions[k].style == action_key_style) {
-    struct action_key const *action_key = &layout->key_definitions[k].action_key;
-    for (uint8_t i=0; i<action_key->num_mappings; i++) {
-      if (!(action_key->mappings[i].from_modifiers & ~state->pressed_modifier_mask)) {
-        add_action_mapping(state, k, &action_key->mappings[i], cb, data);
+    struct action_key const __flash *action_key = &layout->key_definitions[k].action_key;
+    for (uint8_t i=action_key->mappings_start; i<action_key->mappings_end; i++) {
+      struct mapping const __flash *m = layout->mappings + i;
+      if (!(m->from_modifiers & ~state->pressed_modifier_mask)) {
+        add_action_mapping(state, k, m, cb, data);
         break;
       }
     }

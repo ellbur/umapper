@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <avr/pgmspace.h>
+
 #include "keys.h"
 #include <inttypes.h>
 #include <stdbool.h>
@@ -45,8 +47,8 @@ enum key_style {
 };
 
 struct action_key {
-  int num_mappings;
-  struct mapping const *mappings;
+  uint8_t mappings_start;
+  uint8_t mappings_end;
 };
 
 struct modifier_key {
@@ -64,7 +66,8 @@ struct key_definition {
 
 struct layout {
   int num_keys;
-  struct key_definition const *key_definitions;
+  struct mapping const __flash *mappings;
+  struct key_definition const __flash *key_definitions;
 };
 
 #ifdef __cplusplus

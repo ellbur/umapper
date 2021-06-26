@@ -4,36 +4,32 @@
 #include "../debugging.h"
 #include <stdio.h>
 
-static const struct mapping our_mappings_A[] = {
+static const struct mapping our_mappings[] = {
+  // A 0
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = KC_B },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = KC_B },
-};
-  
-static const struct mapping our_mappings_B[] = {
+  // B 2
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = KC_C },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_SHIFT_MASK, .to_action = KC_C },
-};
-  
-static const struct mapping our_mappings_C[] = {
+  // C 4
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = 0x0, .to_action = KC_A },
   { .from_modifiers = MOD1_MASK, .from_absorbing_modifiers = MOD1_MASK, .to_modifiers = LEFT_SHIFT_MASK, .to_action = KC_A },
-};
-  
-static const struct mapping our_mappings_D[] = {
+  // D 6
   { .from_modifiers = 0x0, .from_absorbing_modifiers = 0x0, .to_modifiers = LEFT_CTRL_MASK, .to_action = KC_A },
 };
 
 static const struct key_definition our_key_definitions[] = {
-  [KC_A] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_A } },
-  [KC_B] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_B } },
-  [KC_C] = { action_key_style, .action_key = { .num_mappings = 2, .mappings = our_mappings_C } },
-  [KC_D] = { action_key_style, .action_key = { .num_mappings = 1, .mappings = our_mappings_D } },
+  [KC_A] = { action_key_style, .action_key = { .mappings_start = 0, .mappings_end = 2 } },
+  [KC_B] = { action_key_style, .action_key = { .mappings_start = 2, .mappings_end = 4 } },
+  [KC_C] = { action_key_style, .action_key = { .mappings_start = 4, .mappings_end = 6 } },
+  [KC_D] = { action_key_style, .action_key = { .mappings_start = 6, .mappings_end = 7 } },
   [KC_LSHIFT] = { modifier_key_style, .modifier_key = { MOD1_MASK, LEFT_SHIFT_MASK } },
 };
 
 static const struct layout our_layout = {
-  .num_keys = 5,
-  .key_definitions = our_key_definitions
+  .mappings = our_mappings,
+  .key_definitions = our_key_definitions,
+  .num_keys = (sizeof our_key_definitions) / (sizeof our_key_definitions[0]),
 };
 
 #define MAX_EVENTS_PER_LIST 8
