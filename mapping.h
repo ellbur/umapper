@@ -11,6 +11,7 @@ extern "C" {
 struct pressed_modifier {
   key_code input_key;
   modifier_set modifier_mask;
+  modifier_set output_modifier_mask;
 };
 
 struct pressed_output_modifier {

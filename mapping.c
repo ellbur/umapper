@@ -26,21 +26,20 @@ static void press_modifiers(modifier_set mask, event_callback_t *cb, void *data)
 
 static void release_action_keys(struct state *state, event_callback_t *cb, void *data) {
   if (state->has_pressed_action_key) {
-    cb(data, RELEASED, state->pressed_action_key.to_action);
     release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
     state->has_pressed_action_key = false;
   }
 }
 
 static void add_action_mapping(struct state *state, key_code k, struct mapping const __flash *mapping, event_callback_t *cb, void *data) {
-  if (!(mapping->to_modifiers & LEFT_SHIFT_MASK) && (state->output_modifier_mask & LEFT_SHIFT_MASK)) {
-    state->output_modifier_mask &= ~LEFT_SHIFT_MASK;
-    cb(data, RELEASED, KC_LSHIFT);
+  if (state->has_pressed_action_key) {
+    release_modifiers(state->pressed_action_key.to_modifiers & state->output_modifier_mask & ~mapping->to_modifiers, cb, data);
   }
   
-  if (!(mapping->to_modifiers & RIGHT_SHIFT_MASK) && (state->output_modifier_mask & RIGHT_SHIFT_MASK)) {
-    state->output_modifier_mask &= ~RIGHT_SHIFT_MASK;
-    cb(data, RELEASED, KC_RSHIFT);
+  for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
+    if ((state->pressed_modifiers[i].modifier_mask & mapping->from_modifiers) != 0) {
+      release_modifiers(state->pressed_modifiers[i].output_modifier_mask & ~mapping->to_modifiers, cb, data);
+    }
   }
   
   press_modifiers(mapping->to_modifiers & ~state->output_modifier_mask, cb, data);
@@ -64,6 +63,7 @@ static void add_modifier(struct state *state, key_code k, struct modifier_key co
     
     state->pressed_modifiers[i].input_key = k;
     state->pressed_modifiers[i].modifier_mask = modifier_key->modifier_mask;
+    state->pressed_modifiers[i].output_modifier_mask = modifier_key->output_modifier_mask;
     state->pressed_modifier_mask |= modifier_key->modifier_mask;
       
     state->num_pressed_modifiers += 1;
