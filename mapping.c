@@ -24,38 +24,21 @@ static void press_modifiers(modifier_set mask, event_callback_t *cb, void *data)
   if (mask & RIGHT_META_MASK) cb(data, PRESSED, KC_RGUI);
 }
 
-static void release_modifiers_if_present(struct state *state, modifier_set mask, event_callback_t cb, void *data) {
-}
-
-static void release_action_modifiers(struct state *state, event_callback_t *cb, void *data) {
-  if (state->has_pressed_action_key) {
-    release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
-    state->pressed_action_key.to_modifiers &= state->output_modifier_mask;
-  }
-}
-
-static void release_action_keys(struct state *state, event_callback_t *cb, void *data) {
-  if (state->has_pressed_action_key) {
-    cb(data, RELEASED, state->pressed_action_key.to_action);
-    release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
-    state->has_pressed_action_key = false;
-  }
-}
-
 static void add_action_mapping(struct state *state, key_code k, struct mapping const __flash *mapping, event_callback_t *cb, void *data) {
-  modifier_set blocked_modifiers = 0;
+  modifier_set allowed_modifiers = 0;
   for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
-    if ((state->pressed_modifiers[i].modifier_mask & mapping->from_modifiers) != 0) {
-      blocked_modifiers |= state->pressed_modifiers[i].output_modifier_mask;
+    if ((state->pressed_modifiers[i].modifier_mask & mapping->from_modifiers) == 0) {
+      allowed_modifiers |= state->pressed_modifiers[i].output_modifier_mask;
     }
   }
   
-  release_modifiers(state->output_modifier_mask & blocked_modifiers & ~mapping->to_modifiers, cb, data);
-  state->output_modifier_mask &= ~(blocked_modifiers & ~mapping->to_modifiers);
+  release_modifiers(state->output_modifier_mask & ~allowed_modifiers & ~mapping->to_modifiers, cb, data);
+  state->output_modifier_mask &= ~(~allowed_modifiers & ~mapping->to_modifiers);
   
   if (state->has_pressed_action_key) {
     release_modifiers(state->pressed_action_key.to_modifiers & ~mapping->to_modifiers & ~state->output_modifier_mask, cb, data);
     state->pressed_action_key.to_modifiers &= ~(~mapping->to_modifiers & ~state->output_modifier_mask);
+    cb(data, RELEASED, state->pressed_action_key.to_action);
   }
   
   press_modifiers(mapping->to_modifiers & ~state->output_modifier_mask, cb, data);
@@ -104,6 +87,15 @@ static void newly_press(struct layout const *layout, struct state *state, key_co
   }
   
   if (state->has_absorbed_set && state->absorbed_trigger != k) {
+    if (state->pressed_modifier_mask & state->absorbed_set) {
+      for (uint8_t i=0; i<state->num_pressed_modifiers; i++) {
+        if (state->pressed_modifiers[i].modifier_mask & state->absorbed_set) {
+          release_modifiers(state->output_modifier_mask & state->pressed_modifiers[i].output_modifier_mask, cb, data);
+          state->output_modifier_mask &= ~state->pressed_modifiers[i].output_modifier_mask;
+        }
+      }
+    }
+    
     state->pressed_modifier_mask &= ~state->absorbed_set;
     state->has_absorbed_set = false;
   }
@@ -136,7 +128,9 @@ static void do_press(struct layout const *layout, struct state *state, key_code 
 static void remove_action_mapping(struct state *state, key_code k, struct action_key const *action_key, event_callback_t *cb, void *data) {
   if (state->has_pressed_action_key) {
     if (state->pressed_action_key.trigger == k) {
-      release_action_keys(state, cb, data);
+      cb(data, RELEASED, state->pressed_action_key.to_action);
+      release_modifiers(state->pressed_action_key.to_modifiers & ~state->output_modifier_mask, cb, data);
+      state->has_pressed_action_key = false;
     }
   }
 }
